@@ -508,6 +508,10 @@ public static class WindowsSessionBootstrap {
             if (!truncated) break;
             if (scan == scanWindows.Length - 1) Fail("busy");
           }
+          // The wire carries at most 64 records (parseWindowsHostFrame). A larger reply is a
+          // protocol failure, and the host tears down on it instead of reporting why: refuse the
+          // over-bound case here, where the caller still sees an explicit busy.
+          if (newest.Count > 64) Fail("busy");
           var records = new List<PresenceRecord>(newest.Values);
           records.Sort(delegate(PresenceRecord left, PresenceRecord right) { return String.CompareOrdinal(left.SessionId, right.SessionId); });
           return records.ToArray();
