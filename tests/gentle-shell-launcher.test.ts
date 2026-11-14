@@ -2185,6 +2185,34 @@ test("declaredPackageSkewMessage stays silent for a matching pin, an unpinned sp
 	assert.equal(declaredPackageSkewMessage({ declaration: { kind: "path", dir: "/checkout" }, homeDir: "/pi/agent", bundledVersion: "4.8.0" }), undefined);
 });
 
+test("declaredPackageSkewMessage stays silent when the launcher takes the package over", () => {
+	assert.equal(
+		declaredPackageSkewMessage({ declaration: { kind: "npm", version: "4.6.0" }, homeDir: "/pi/agent", bundledVersion: "4.8.0", installedVersion: "4.6.0", takeOver: true }),
+		undefined,
+	);
+});
+
+test("declaredPackageSkewMessage reports the installed version when it differs from both the bundle and the pin", () => {
+	assert.equal(
+		declaredPackageSkewMessage({ declaration: { kind: "npm", version: "4.8.0" }, homeDir: "/pi/agent", bundledVersion: "4.9.0", installedVersion: "4.6.0" }),
+		"gentle-shell: /pi/agent loads gentle-pi 4.6.0, but this launcher ships 4.9.0; the installed package is what pi loads (settings unchanged).\n",
+	);
+});
+
+test("declaredPackageSkewMessage stays silent when the installed version equals the bundle even though the pin differs", () => {
+	assert.equal(
+		declaredPackageSkewMessage({ declaration: { kind: "npm", version: "4.6.0" }, homeDir: "/pi/agent", bundledVersion: "4.8.0", installedVersion: "4.8.0" }),
+		undefined,
+	);
+});
+
+test("declaredPackageSkewMessage falls back to the pin when installedVersion is undefined", () => {
+	assert.equal(
+		declaredPackageSkewMessage({ declaration: { kind: "npm", version: "4.6.0" }, homeDir: "/pi/agent", bundledVersion: "4.8.0", installedVersion: undefined }),
+		"gentle-shell: /pi/agent declares gentle-pi 4.6.0, but this launcher ships 4.8.0; the declared package is what pi loads (settings unchanged).\n",
+	);
+});
+
 test("helpText documents the launcher flags, the home subcommand, the env vars, and passthrough forwarding", () => {
 	const text = helpText();
 	assert.match(text, /--link/);

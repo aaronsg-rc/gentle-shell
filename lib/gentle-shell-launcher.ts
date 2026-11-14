@@ -1362,6 +1362,11 @@ export interface DeclaredPackageSkewInput {
 	declaration: GentlePiDeclaration | undefined;
 	homeDir: string;
 	bundledVersion: string;
+	installedVersion?: string;
+	// True when the launcher injects its own package root for this run: the
+	// declared package no longer decides what loads, so a stale copy on disk is
+	// not a skew worth reporting.
+	takeOver?: boolean;
 }
 
 // The one-line notice for a home whose own settings keep loading a gentle-pi
@@ -1369,6 +1374,11 @@ export interface DeclaredPackageSkewInput {
 // contract, so without this the bundle can move ahead while pi keeps loading
 // an older package and nothing on screen says so.
 export function declaredPackageSkewMessage(input: DeclaredPackageSkewInput): string | undefined {
+	if (input.takeOver === true) return undefined;
+	if (input.installedVersion !== undefined) {
+		if (input.installedVersion === input.bundledVersion) return undefined;
+		return `gentle-shell: ${input.homeDir} loads gentle-pi ${input.installedVersion}, but this launcher ships ${input.bundledVersion}; the installed package is what pi loads (settings unchanged).\n`;
+	}
 	if (input.declaration?.kind !== "npm") return undefined;
 	const declaredVersion = input.declaration.version;
 	if (declaredVersion === undefined || declaredVersion === input.bundledVersion) return undefined;

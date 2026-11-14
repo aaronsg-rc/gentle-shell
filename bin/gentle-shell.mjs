@@ -2378,7 +2378,17 @@ async function main() {
 		// Not taking over means pi loads the declared package, which may be an
 		// older gentle-pi than this launcher. Say so once: a silent skew is how a
 		// user believes an upgrade took effect when only the bundle moved.
-		const skewMessage = declaredPackageSkewMessage({ declaration, homeDir: home.dir, bundledVersion: ownPackageVersion() });
+		let installedVersion;
+		try {
+			const installedText = readJsonIfExists(join(home.dir, "npm", "node_modules", "gentle-pi", "package.json"));
+			if (installedText !== undefined) {
+				const installedPkg = JSON.parse(installedText);
+				if (typeof installedPkg?.version === "string") installedVersion = installedPkg.version;
+			}
+		} catch {
+			installedVersion = undefined;
+		}
+		const skewMessage = declaredPackageSkewMessage({ declaration, homeDir: home.dir, bundledVersion: ownPackageVersion(), installedVersion, takeOver });
 		if (skewMessage !== undefined) process.stderr.write(skewMessage);
 		if (takeOver) {
 			const skip = declaration ?? { kind: "path", dir: realEffectivePackageRoot };
